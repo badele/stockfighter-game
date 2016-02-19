@@ -9,7 +9,7 @@ Usage:
 Arguments:
 
 Options:
-  -n=<nb> --nb-loop=<nb>        Loop number [default: 4]
+  -n=<nb> --nb-loop=<nb>        Loop number [default: 10]
   -q=<qorder> --qty=<qorder>    Stock quantity must be order [default: 100]
   -h --help                     Help usage
 
@@ -23,42 +23,51 @@ __commitnumber__ = "$id$"
 
 import time
 
-from docopt import docopt
 from stockfighter import Stockfighter
 from stockfighter import GM
+
+from docopt import docopt
+
+import pandas as pd
+
+pd.options.display.expand_frame_repr = False
 
 argopts = docopt(__doc__)
 
 # Get game informations
+print ("Init game")
 gm = GM()
 varsgame = gm.start('first_steps')
 account = varsgame['account']
 venue = varsgame['venues'][0]
 stock = varsgame['tickers'][0]
-pause = varsgame['secondsPerTradingDay']
+pause = 1 # varsgame['secondsPerTradingDay']
 
+print ("Init stockfighter")
 s = Stockfighter(venue=venue, account=account)
 
 # Compute mini/maxi prices
-bidprices = []
-askprices = []
+stockprices = []
 for i in range(0, int(argopts['--nb-loop'])):
     # Get stock informations
-    stockavg = s.quote_for_stock(stock=stock)
+    print ('.',end = "", flush=True)
 
-    # Get stock prices
-    if 'bid' in stockavg:
-        bidprices.append(stockavg['bid'])
-    if 'ask' in stockavg:
-        askprices.append(stockavg['ask'])
+    stockinfo = s.quote_for_stock(stock=stock)
+    stockprices.append(stockinfo)
 
-    # Wait
     time.sleep(pause)
 
-# Get mini/maxi price
-bidmin = min(bidprices)
+# Print stocks result
+print ('')
+df_allstocks = pd.DataFrame(stockprices)
+df_uniqstocks = df_allstocks.drop_duplicates()
+df_binmin = df_uniqstocks.min()
+
+print ("Stocks")
+print (df_uniqstocks[['venue', 'symbol', 'quoteTime', 'bid', 'ask', 'bidSize', 'askSize', 'bidDepth', 'askDepth']])
 
 # New order
+bidmin = int(df_binmin['bid'])
 qty = int(argopts['--qty'])
 print ("Buy %(qty)s stocks at %(bidmin)s" % locals())
 print (s.place_new_order(stock, bidmin, qty, 'buy', 'limit'))
