@@ -3,8 +3,8 @@
 ## Usage
 
     Usage:
-      level1 [-q=<qorder> | --qty=<qorder>] [-n=<nb> | --nb-loop=<nb>]
-      level1 -h | --help
+      run.py [-q=<qorder> | --qty=<qorder>] [-n=<nb> | --nb-loop=<nb>]
+      run.py -h | --help
 
     Arguments:
 
