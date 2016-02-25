@@ -15,7 +15,6 @@
 
 ## Run
 
-    cd level1
     run.py
 
     # Result

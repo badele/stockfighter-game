@@ -3,13 +3,13 @@
 
 """
 Usage:
-  level1 [-q=<qorder> | --qty=<qorder>] [-n=<nb> | --nb-loop=<nb>]
+  level1 [-q=<qorder> | --qty=<qorder>] [-a=<nb> | --analyze-loop=<nb>]
   level1 -h | --help
 
 Arguments:
 
 Options:
-  -n=<nb> --nb-loop=<nb>        Loop number [default: 10]
+  -a=<nb> --analyze-loop=<nb>   Loop number [default: 10]
   -q=<qorder> --qty=<qorder>    Stock quantity must be order [default: 100]
   -h --help                     Help usage
 
@@ -48,7 +48,8 @@ s = Stockfighter(venue=venue, account=account)
 
 # Compute mini/maxi prices
 stockprices = []
-for i in range(0, int(argopts['--nb-loop'])):
+aloop = int(argopts['--analyze-loop'])
+for i in range(0, aloop):
     # Get stock informations
     print ('.',end = "", flush=True)
 
