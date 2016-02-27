@@ -23,7 +23,6 @@ __commitnumber__ = "$id$"
 
 import re
 import time
-import sys
 
 from stockfighter import Stockfighter
 from stockfighter import GM
@@ -31,6 +30,9 @@ from stockfighter import GM
 from docopt import docopt
 
 import pandas as pd
+
+import commons as lib
+
 
 pd.options.display.expand_frame_repr = False
 
@@ -42,88 +44,21 @@ previousnbfilled = 0
 ################################################
 # Functions
 ################################################
-def getGameState():
-    while True:
-        time.sleep(pause)
-        state = gm.check(instanceid)
-        if 'flash' not in state:
-            continue
-
-        return state['flash']['info']
-
 def waitTargetPrice():
     while True:
-        info = getGameState()
+        info = sgame.getGameState()
         m = re.match(r'.*target price is \$([0-9]+)\.([0-9]+).*', info)
         if m:
             targetprice = int("%s%s" % (m.group(1),m.group(2)))
             return targetprice
 
 
-def waitAllordered():
-    while True:
-
-        # Check if orders is opened
-        time.sleep(pause)
-        stockinfo = s.status_for_all_orders_in_a_stock(stock)
-        orders = stockinfo['orders']
-
-        opened = False
-        for order in orders:
-            opened = opened or order['open']
-
-        if not opened:
-            break
-
-    # Compute all orders
-    totalnbfilled = 0
-    totalsumprice = 0
-    for order in orders:
-        for fill in order['fills']:
-            totalnbfilled += int(fill['qty'])
-            totalsumprice += (int(fill['qty']) * int(fill['price']))
-
-    return {
-        'totalnbfilled': totalnbfilled,
-        'totalsumprice': totalsumprice,
-        'totalavgprice': int(totalsumprice / totalnbfilled)
-    }
-
-################################################
-# Game init
-################################################
-
-# Get game informations
-print ("Init game")
-gm = GM()
-varsgame = gm.start('chock_a_block')
-instanceid = varsgame['instanceId']
-
-# Restart game
-print ("Restart game")
-varsgame = gm.restart(instanceid)
-instanceid = varsgame['instanceId']
-state = gm.check(instanceid)
-# Check if the game is initialized
-while 'details' not in state:
-    time.sleep(1)
-    state = gm.check(instanceid)
-
-account = varsgame['account']
-venue = varsgame['venues'][0]
-stock = varsgame['tickers'][0]
-pause = 1 # varsgame['secondsPerTradingDay']
-
-print ("Init stockfighter")
-s = Stockfighter(venue=venue, account=account)
-
-################################################
-# Search target price
-################################################
+# Init game
+sgame = lib.SGame('chock_a_block', True)
 
 # Execute one bid for searching target client price
 print ("Search client target price")
-s.place_new_order(stock, 1, 1, 'buy', 'market')
+sgame.sf.place_new_order(sgame.stock, 1, 1, 'buy', 'market')
 
 # Extract target price
 targetprice = waitTargetPrice()
@@ -136,7 +71,7 @@ qtyrequiredprice = targetprice * qtyrequired
 ################################################
 
 while True:
-    orderinfo = waitAllordered()
+    orderinfo = sgame.waitAllordered()
     previousnbfilled = orderinfo['totalnbfilled']
     previoussumprice = orderinfo['totalsumprice']
 
@@ -152,20 +87,15 @@ while True:
     newtargetprice = int((nextsumprice - previoussumprice) / nextnbfill)
 
     print ('.',end = "", flush=True)
-    order = s.place_new_order(stock, newtargetprice, nextnbfill, 'buy', 'immediate-or-cancel')
-    state = gm.check(instanceid)
-
-    if 'info' not in state['flash']:
-        break
-
-    flashinfo = state['flash']['info']
+    order = sgame.sf.place_new_order(sgame.stock, newtargetprice, nextnbfill, 'buy', 'immediate-or-cancel')
+    flashinfo = sgame.getGameState()
 
 ################################################
 # Show results
 ################################################
 
 print ("")
-stockinfo = s.status_for_all_orders_in_a_stock(stock)
+stockinfo = sgame.sf.status_for_all_orders_in_a_stock(sgame.stock)
 orders = stockinfo['orders']
 
 stockprices = []

@@ -22,7 +22,6 @@ __description__ = """Stockfighter python game solutions"""
 __license__ = 'GPL'
 __commitnumber__ = "$id$"
 
-import time
 import pandas as pd
 from docopt import docopt
 
@@ -33,6 +32,7 @@ pd.options.display.expand_frame_repr = False
 argopts = docopt(__doc__)
 aloop = int(argopts['--analyze-loop'])
 nbshare = int(argopts['--nb-share'])
+
 # Init game
 sgame = lib.SGame('sell_side', True)
 
